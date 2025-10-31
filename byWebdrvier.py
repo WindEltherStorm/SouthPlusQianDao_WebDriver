@@ -10,6 +10,9 @@ import requests
 import time
 import os
 
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+
 # 获取系统变量serverKey
 serverKey = os.environ.get('serverKey')
 
@@ -35,7 +38,7 @@ chrome_options.add_argument("--no-sandbox")  # 解决一些权限问题
 chrome_options.add_argument("--disable-dev-shm-usage")  # 解决共享内存问题
 
 
-service = Service(rf'/usr/local/bin/chromedriver')  # 确保路径正确
+service = Service(ChromeDriverManager().install())
 web = webdriver.Chrome(service=service, options=chrome_options)
 
 def Lingqu():
