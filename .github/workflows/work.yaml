@@ -1,9 +1,10 @@
+# .github/workflows/southplus.yml
 name: SouthPlus Daily Check-in
 
 on:
   schedule:
-    - cron: '0-59 23,0,1,2,3 * * *'  # UTC 23:00-03:59 → Beijing 07:00-11:59
-  workflow_dispatch:  # Manual trigger
+    - cron: '0-59 23,0,1,2,3 * * *'   # UTC 23:00-03:59 → Beijing 07:00-11:59
+  workflow_dispatch:
 
 jobs:
   checkin:
@@ -12,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.14
         uses: actions/setup-python@v4
         with:
           python-version: '3.14'
@@ -22,14 +23,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate random delay (0-240 min)
+      - name: Random delay (0-299 min)
         id: delay
-        run: echo "delay=$((RANDOM % 241))" >> $GITHUB_OUTPUT
+        run: echo "delay=$((RANDOM % 300))" >> $GITHUB_OUTPUT
 
-      - name: Sleep random duration
+      - name: Sleep
         run: sleep ${{ steps.delay.outputs.delay }}m
 
-      - name: Run sign-in script
+      - name: Run check-in script
         env:
           COOKIE: ${{ secrets.COOKIE }}
           serverKey: ${{ secrets.serverKey }}
