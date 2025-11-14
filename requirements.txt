@@ -2,5 +2,4 @@ selenium==4.25.0
 webdriver-manager==4.0.2
 requests==2.32.3
 beautifulsoup4==4.12.3
-# lxml is installed from a many-linux wheel – no dev packages required
-lxml==5.3.0 --only-binary=:all:
+lxml==6.0.2
