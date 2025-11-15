@@ -1,107 +1,164 @@
-import os
-import json
-import time
-import requests
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.webdriver.chrome.service import Service
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+import json
+from bs4 import BeautifulSoup
+import requests
+import time
+import os
+
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 
-# Config
-DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
-MAX_RETRIES = 3
+# 获取系统变量serverKey
+serverKey = os.environ.get('serverKey')
 
-# Chrome setup
+
+# 获取 COOKIE 环境变量
+cookie_json = os.environ.get('COOKIE')
+
+# 获取 COOKIE 环境变量并解析为 JSON 列表
+
+
+if cookie_json:
+    try:
+        # 解析 JSON 字符串
+        cookie_data = json.loads(cookie_json)
+    except json.JSONDecodeError:
+        print("错误：无法解析 COOKIE 环境变量为 JSON。")
+else:
+    print("错误：COOKIE 环境变量未设置。")
+
 chrome_options = Options()
-if not DEBUG:
-    chrome_options.add_argument("--headless")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--window-size=1920,1080")
-chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+chrome_options.add_argument("--headless")  # 如果你在无头模式下运行
+chrome_options.add_argument("--no-sandbox")  # 解决一些权限问题
+chrome_options.add_argument("--disable-dev-shm-usage")  # 解决共享内存问题
+
 
 service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options)
-wait = WebDriverWait(driver, 10)
+web = webdriver.Chrome(service=service, options=chrome_options)
 
-def load_cookies():
-    cookie_str = os.getenv('COOKIE')
-    if not cookie_str:
-        print("ERROR: COOKIE env var not set")
-        return False
+def Lingqu():
     try:
-        cookies = json.loads(cookie_str)
-        driver.get("https://www.south-plus.net/")
-        for cookie in cookies:
-            driver.add_cookie(cookie)
-        print("SUCCESS: Cookies loaded")
-        return True
-    except json.JSONDecodeError as e:
-        print(f"ERROR: Invalid COOKIE JSON: {e}")
-        return False
-    except Exception as e:
-        print(f"ERROR: Cookie loading failed: {e}")
-        return False
-
-def sign_in():
-    for attempt in range(MAX_RETRIES):
+        # 切换到进行中的任务
+        web.find_element(By.XPATH, '//*[@id="main"]/table/tbody/tr/td[1]/div[2]/table/tbody/tr[3]/td').click()
+        # 点击进行中的任务
+        # 完成日常
+        time.sleep(2)
         try:
-            driver.get("https://www.south-plus.net/plugin.php?id=eb9e6_tasks:actions:newtasks")
-            time.sleep(3)
-            
-            # Wait for and click sign-in link
-            sign_link = wait.until(EC.element_to_be_clickable((By.LINK_TEXT, "每日签到")))
-            sign_link.click()
-            time.sleep(2)
-            
-            # Click claim button (updated XPath for robustness)
-            claim_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), '立即领取') or contains(text(), 'Sign in')]")))
-            claim_btn.click()
-            time.sleep(2)
-            
-            print("SUCCESS: Sign-in completed")
-            return True
-        except TimeoutException:
-            print(f"WARNING: Element not found on attempt {attempt + 1}")
-        except NoSuchElementException as e:
-            print(f"ERROR: Sign-in element missing: {e}")
-        except Exception as e:
-            print(f"ERROR: Sign-in failed on attempt {attempt + 1}: {e}")
-        time.sleep(5)  # Backoff
-    print("ERROR: All sign-in retries failed")
-    return False
+            web.find_element(By.XPATH, '//*[@id="both_15"]/a/img').click()
+            print('日常领取成功')
+            # 用urlencode编码中文内容
+            messagecontent = '日常领取成功'
+            messagecontent = requests.utils.quote(messagecontent)
+            # 通过server酱发送通知
+            url = f"https://sctapi.ftqq.com/{serverKey}.send?title={messagecontent}&desp=messagecontent"
 
-def notify_via_serverchan(title, message):
-    key = os.getenv('serverKey')
-    if not key:
-        print("INFO: serverKey not set, skipping notification")
-        return
-    url = f"https://sctapi.ftqq.com/{key}.send"
-    params = {"title": title, "desp": message}
-    try:
-        resp = requests.get(url, params=params, timeout=10)
-        if resp.status_code == 200:
-            print("SUCCESS: Notification sent")
-        else:
-            print(f"WARNING: Notification failed: {resp.status_code}")
-    except Exception as e:
-        print(f"ERROR: Notification error: {e}")
+            payload={}
+            headers = {
+            'User-Agent': 'Apifox/1.0.0 (https://apifox.com)'
+            }
 
-# Main execution
-try:
-    if load_cookies():
-        if sign_in():
-            msg = "SouthPlus Daily Sign-in: SUCCESS"
-            notify_via_serverchan(msg, f"Completed at {time.strftime('%Y-%m-%d %H:%M:%S UTC')}")
-        else:
-            msg = "SouthPlus Daily Sign-in: Already Done or Failed"
-            notify_via_serverchan(msg, "Check logs for details")
-    else:
-        print("FATAL: Aborting due to cookie error")
-finally:
-    driver.quit()
+            response = requests.request("GET", url, headers=headers, data=payload)
+        except:
+            print('日常领取失败')
+            
+            
+        try:
+            # 尝试点击周常,没有就跳了
+            web.find_element(By.XPATH, '//*[@id="both_14"]/a/img').click()
+            print('周常领取成功')
+            # 用urlencode编码中文内容
+            messagecontent = '周常领取成功'
+            messagecontent = requests.utils.quote(messagecontent)
+            # 通过server酱发送通知
+            url = f"https://sctapi.ftqq.com/{serverKey}.send?title={messagecontent}&desp=messagecontent"
+
+            payload={}
+            headers = {
+            'User-Agent': 'Apifox/1.0.0 (https://apifox.com)'
+            }
+
+            response = requests.request("GET", url, headers=headers, data=payload)
+
+        except:
+            pass
+
+
+    except:
+        # 用urlencode编码中文内容
+        messagecontent = '日常领取失败'
+        messagecontent = requests.utils.quote(messagecontent)
+
+        # 通过server酱发送通知
+        url = f"https://sctapi.ftqq.com/{serverKey}.send?title={messagecontent}&desp=messagecontent"
+
+        payload={}
+        headers = {
+        'User-Agent': 'Apifox/1.0.0 (https://apifox.com)'
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        print('日常暂未刷新或领取失败')
+
+
+
+
+
+
+
+
+url = 'https://www.south-plus.net/plugin.php?H_name-tasks.html.html'
+web.get(url)
+
+time.sleep(1)
+# # 保存cookies为json格式
+# cookies = web.get_cookies()
+# print(cookies)
+# with open('cookies.json', 'w') as f:
+#     json.dump(cookies, f)
+
+
+# 将cookies添加到webdriver中   
+for cookie in cookie_data:
+    web.add_cookie(cookie)
+
+# 重新加载页面
+web.get(url)
+time.sleep(3)
+# 领取周常
+soup = BeautifulSoup(web.page_source, 'html.parser')
+weekly_task_1 = soup.find('span', id='p_15')
+weekly_task_2 = soup.find('span', id='p_14')
+print(weekly_task_1,weekly_task_2)
+
+
+if weekly_task_1 and weekly_task_2:
+    web.find_element(By.XPATH, '//*[@id="p_14"]/a/img').click()
+    web.find_element(By.XPATH, '//*[@id="p_15"]/a/img').click()
+    print('任务已领取')
+    Lingqu()  
+
+elif weekly_task_1:
+    web.find_element(By.XPATH, '//*[@id="p_15"]/a/img').click()
+    Lingqu()
+
+elif weekly_task_2:
+    web.find_element(By.XPATH, '//*[@id="p_14"]/a/img').click()
+    Lingqu()
+
+
+    
+else:
+    print('任务暂未刷新')
+
+
+
+
+
+
+web.quit()
