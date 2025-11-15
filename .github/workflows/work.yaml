@@ -1,5 +1,5 @@
 # .github/workflows/southplus.yml
-name: SouthPlus Daily Check-in
+name: SouthPlus Check-in
 
 on:
   schedule:
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.14
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.14'
@@ -21,17 +21,17 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install selenium requests beautifulsoup4 webdriver-manager lxml
 
-      - name: Random delay (0-299 min)
+      - name: Random delay 0-299 min
         id: delay
         run: echo "delay=$((RANDOM % 300))" >> $GITHUB_OUTPUT
 
       - name: Sleep
         run: sleep ${{ steps.delay.outputs.delay }}m
 
-      - name: Run check-in script
+      - name: Run check-in
         env:
           COOKIE: ${{ secrets.COOKIE }}
           serverKey: ${{ secrets.serverKey }}
-        run: python byWebdriver.py
+        run: python byWebdrvier.py
