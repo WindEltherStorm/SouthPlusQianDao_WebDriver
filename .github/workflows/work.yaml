@@ -3,7 +3,7 @@ name: SouthPlus Check-in
 
 on:
   schedule:
-    - cron: '0-59 23,0,1,2,3 * * *'   # UTC 23:00-03:59 → Beijing 07:00-11:59
+    - cron: '0 0 * * *'   # UTC 23:00-03:59 → Beijing 07:00-11:59
   workflow_dispatch:
 
 jobs:
